@@ -21,20 +21,20 @@ export type ProgressCallback = (
 
 // 100MB test file - must support CORS and range requests
 const DOWNLOAD_URL =
-  "https://speed.cloudflare.com/__down?bytes=100000000";
+  "https://speedtest-t26s.onrender.com/download";
 
 // Ping endpoints - small files with CORS
 const PING_URLS = [
+  "https://speedtest-t26s.onrender.com/ping",
   "https://www.google.com/favicon.ico",
-  "https://www.cloudflare.com/favicon.ico",
   "https://github.com/favicon.ico",
 ];
 
 // Upload endpoint - must accept POST with CORS
-const UPLOAD_URL = "https://httpbin.org/post";
+const UPLOAD_URL = "https://speedtest-t26s.onrender.com/upload";
 
 const DOWNLOAD_CONNECTIONS = 8;
-const TEST_DURATION_MS = 10000;
+const TEST_DURATION_MS = 15000;
 const PING_SAMPLES = 20;
 
 // ============================================================
@@ -114,28 +114,30 @@ export async function measureDownload(
   onProgress("download", 0, 0);
 
   let totalBytes = 0;
+  let lastCheckBytes = 0;
   const startTime = performance.now();
-  const speedHistory: number[] = [];
+  let lastCheckTime = startTime;
   let lastReportedSpeed = 0;
 
   const controller = new AbortController();
   const timeoutId = setTimeout(() => controller.abort(), TEST_DURATION_MS);
 
   const updateInterval = setInterval(() => {
-    const elapsed = (performance.now() - startTime) / 1000;
-    if (elapsed > 0) {
-      const currentSpeed = (totalBytes * 8) / elapsed / 1000000;
-      speedHistory.push(currentSpeed);
-      const recent = speedHistory.slice(-6);
-      lastReportedSpeed =
-        recent.reduce((a, b) => a + b, 0) / recent.length;
+    const now = performance.now();
+    const intervalSec = (now - lastCheckTime) / 1000;
+    if (intervalSec > 0) {
+      const intervalBytes = totalBytes - lastCheckBytes;
+      const instantSpeed = (intervalBytes * 8) / intervalSec / 1000000;
+      lastReportedSpeed = lastReportedSpeed * 0.6 + instantSpeed * 0.4;
+      lastCheckBytes = totalBytes;
+      lastCheckTime = now;
       const progress = Math.min(
         ((performance.now() - startTime) / TEST_DURATION_MS) * 100,
         100
       );
       onProgress("download", lastReportedSpeed, progress);
     }
-  }, 150);
+  }, 200);
 
   const onBytes = (n: number) => {
     totalBytes += n;
@@ -161,27 +163,30 @@ export async function measureUpload(
   onProgress("upload", 0, 0);
 
   let totalBytes = 0;
+  let lastCheckBytes = 0;
   const startTime = performance.now();
-  const speedHistory: number[] = [];
+  let lastCheckTime = startTime;
+  let lastReportedSpeed = 0;
 
   const controller = new AbortController();
   const timeoutId = setTimeout(() => controller.abort(), TEST_DURATION_MS);
 
   const updateInterval = setInterval(() => {
-    const elapsed = (performance.now() - startTime) / 1000;
-    if (elapsed > 0) {
-      const currentSpeed = (totalBytes * 8) / elapsed / 1000000;
-      speedHistory.push(currentSpeed);
-      const recent = speedHistory.slice(-6);
-      const smoothed =
-        recent.reduce((a, b) => a + b, 0) / recent.length;
+    const now = performance.now();
+    const intervalSec = (now - lastCheckTime) / 1000;
+    if (intervalSec > 0) {
+      const intervalBytes = totalBytes - lastCheckBytes;
+      const instantSpeed = (intervalBytes * 8) / intervalSec / 1000000;
+      lastReportedSpeed = lastReportedSpeed * 0.6 + instantSpeed * 0.4;
+      lastCheckBytes = totalBytes;
+      lastCheckTime = now;
       const progress = Math.min(
         ((performance.now() - startTime) / TEST_DURATION_MS) * 100,
         100
       );
-      onProgress("upload", smoothed, progress);
+      onProgress("upload", lastReportedSpeed, progress);
     }
-  }, 150);
+  }, 200);
 
   const uploadOne = async () => {
     while (!controller.signal.aborted) {
