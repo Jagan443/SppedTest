@@ -65,7 +65,6 @@ export default function SpeedTest() {
     <div className="speed-test">
       <SpeedDisplay
         value={currentSpeed}
-        unit="Mbps"
         isActive={isRunning}
         phase={phase}
       />

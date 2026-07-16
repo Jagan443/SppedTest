@@ -2,7 +2,6 @@ import type { TestPhase } from "../utils/speedTest";
 
 interface SpeedDisplayProps {
   value: number;
-  unit: string;
   isActive: boolean;
   phase: TestPhase;
 }
@@ -16,11 +15,10 @@ const PHASE_LABELS: Record<string, string> = {
 };
 
 const MAX_SPEED = 500;
-const SEGMENTS = 40;
+const BARS = 30;
 
 export default function SpeedDisplay({
   value,
-  unit,
   isActive,
   phase,
 }: SpeedDisplayProps) {
@@ -28,51 +26,71 @@ export default function SpeedDisplay({
     value < 10 ? value.toFixed(1) : value < 100 ? value.toFixed(1) : Math.round(value);
 
   const fillRatio = Math.min(value / MAX_SPEED, 1);
-  const activeSegments = Math.round(fillRatio * SEGMENTS);
+  const activeBars = Math.round(fillRatio * BARS);
   const label = PHASE_LABELS[phase] ?? "";
 
   return (
     <div className={`speed-display ${isActive ? "active" : ""}`}>
-      <div className="dash-frame">
-        <div className="dash-top-bar">
-          <span className="dash-brand">SPEEDTEST</span>
-          <span className="dash-max">MAX {MAX_SPEED}</span>
+      <div className="dig-frame">
+        {/* Top status row */}
+        <div className="dig-header">
+          <span className="dig-dot" />
+          <span className="dig-label">SPEED</span>
+          <span className="dig-label right">Mbps</span>
         </div>
 
-        <div className="dash-body">
-          <div className="dash-segments">
-            {Array.from({ length: SEGMENTS }, (_, i) => {
-              const ratio = i / (SEGMENTS - 1);
-              const isActive = i < activeSegments;
-              let color = "#00d4ff";
-              if (ratio > 0.7) color = "#ff6b6b";
-              else if (ratio > 0.45) color = "#ffc107";
+        {/* Main digital readout */}
+        <div className="dig-display">
+          <span className="dig-num">{displayValue}</span>
+        </div>
+
+        {/* Segmented bar */}
+        <div className="dig-bar-row">
+          <div className="dig-bar">
+            {Array.from({ length: BARS }, (_, i) => {
+              const ratio = i / (BARS - 1);
+              const on = i < activeBars;
+              let color = "var(--accent)";
+              if (ratio > 0.7) color = "var(--accent-red)";
+              else if (ratio > 0.45) color = "var(--accent-yellow)";
               return (
                 <div
                   key={i}
-                  className={`dash-segment ${isActive ? "on" : ""}`}
-                  style={{
-                    backgroundColor: isActive ? color : "rgba(255,255,255,0.04)",
-                    boxShadow: isActive ? `0 0 8px ${color}40` : "none",
-                  }}
+                  className={`dig-seg ${on ? "on" : ""}`}
+                  style={
+                    on
+                      ? { backgroundColor: color, boxShadow: `0 0 6px ${color}50, inset 0 0 2px ${color}30` }
+                      : undefined
+                  }
                 />
               );
             })}
           </div>
-
-          <div className="dash-speed">
-            <span className="dash-digits">{displayValue}</span>
-            <span className="dash-unit">{unit}</span>
-          </div>
         </div>
 
-        <div className="dash-bottom">
-          {label ? (
-            <span className="dash-phase">{label}</span>
-          ) : (
-            <span className="dash-phase idle">READY</span>
-          )}
-          <div className="dash-underline" style={{ width: `${fillRatio * 100}%` }} />
+        {/* Scale row */}
+        <div className="dig-scale">
+          <span>0</span>
+          <span>100</span>
+          <span>200</span>
+          <span>300</span>
+          <span>400</span>
+          <span>500</span>
+        </div>
+
+        {/* Bottom row */}
+        <div className="dig-footer">
+          <div className="dig-phase-box">
+            {label ? (
+              <span className="dig-phase">{label}</span>
+            ) : (
+              <span className="dig-phase off">READY</span>
+            )}
+          </div>
+          <div className="dig-peak">
+            <span className="dig-peak-label">PEAK</span>
+            <span className="dig-peak-val">{displayValue}</span>
+          </div>
         </div>
       </div>
     </div>
