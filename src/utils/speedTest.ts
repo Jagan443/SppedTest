@@ -117,7 +117,7 @@ export async function measureDownload(
   let lastCheckBytes = 0;
   const startTime = performance.now();
   let lastCheckTime = startTime;
-  let lastReportedSpeed = 0;
+  const speedSamples: number[] = [];
 
   const controller = new AbortController();
   const timeoutId = setTimeout(() => controller.abort(), TEST_DURATION_MS);
@@ -128,14 +128,16 @@ export async function measureDownload(
     if (intervalSec > 0) {
       const intervalBytes = totalBytes - lastCheckBytes;
       const instantSpeed = (intervalBytes * 8) / intervalSec / 1000000;
-      lastReportedSpeed = lastReportedSpeed * 0.3 + instantSpeed * 0.7;
+      speedSamples.push(instantSpeed);
       lastCheckBytes = totalBytes;
       lastCheckTime = now;
+      const avgSpeed =
+        speedSamples.reduce((a, b) => a + b, 0) / speedSamples.length;
       const progress = Math.min(
         ((performance.now() - startTime) / TEST_DURATION_MS) * 100,
         100
       );
-      onProgress("download", lastReportedSpeed, progress);
+      onProgress("download", avgSpeed, progress);
     }
   }, 100);
 
@@ -151,7 +153,10 @@ export async function measureDownload(
   clearTimeout(timeoutId);
   clearInterval(updateInterval);
 
-  const finalSpeed = lastReportedSpeed;
+  const finalSpeed =
+    speedSamples.length > 0
+      ? speedSamples.reduce((a, b) => a + b, 0) / speedSamples.length
+      : 0;
   onProgress("download", Math.round(finalSpeed * 100) / 100, 100);
   return Math.round(finalSpeed * 100) / 100;
 }
@@ -165,7 +170,7 @@ export async function measureUpload(
   let lastCheckBytes = 0;
   const startTime = performance.now();
   let lastCheckTime = startTime;
-  let lastReportedSpeed = 0;
+  const speedSamples: number[] = [];
 
   const controller = new AbortController();
   const timeoutId = setTimeout(() => controller.abort(), TEST_DURATION_MS);
@@ -176,14 +181,16 @@ export async function measureUpload(
     if (intervalSec > 0) {
       const intervalBytes = totalBytes - lastCheckBytes;
       const instantSpeed = (intervalBytes * 8) / intervalSec / 1000000;
-      lastReportedSpeed = lastReportedSpeed * 0.3 + instantSpeed * 0.7;
+      speedSamples.push(instantSpeed);
       lastCheckBytes = totalBytes;
       lastCheckTime = now;
+      const avgSpeed =
+        speedSamples.reduce((a, b) => a + b, 0) / speedSamples.length;
       const progress = Math.min(
         ((performance.now() - startTime) / TEST_DURATION_MS) * 100,
         100
       );
-      onProgress("upload", lastReportedSpeed, progress);
+      onProgress("upload", avgSpeed, progress);
     }
   }, 100);
 
@@ -209,7 +216,10 @@ export async function measureUpload(
   clearTimeout(timeoutId);
   clearInterval(updateInterval);
 
-  const finalSpeed = lastReportedSpeed;
+  const finalSpeed =
+    speedSamples.length > 0
+      ? speedSamples.reduce((a, b) => a + b, 0) / speedSamples.length
+      : 0;
   onProgress("upload", Math.round(finalSpeed * 100) / 100, 100);
   return Math.round(finalSpeed * 100) / 100;
 }
