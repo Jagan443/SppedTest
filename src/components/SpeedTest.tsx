@@ -67,6 +67,7 @@ export default function SpeedTest() {
         value={currentSpeed}
         unit="Mbps"
         isActive={isRunning}
+        phase={phase}
       />
 
       {phase === "done" && result && (
