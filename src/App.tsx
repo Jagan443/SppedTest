@@ -1,4 +1,5 @@
 import SpeedTest from "./components/SpeedTest";
+import ThemeToggle from "./components/ThemeToggle";
 import "./App.css";
 
 function App() {
@@ -9,6 +10,7 @@ function App() {
           <span className="logo-text">SPEED</span>
           <span className="logo-dot">.</span>
         </div>
+        <ThemeToggle />
       </header>
 
       <main className="app-main">
