@@ -128,7 +128,7 @@ export async function measureDownload(
     if (intervalSec > 0) {
       const intervalBytes = totalBytes - lastCheckBytes;
       const instantSpeed = (intervalBytes * 8) / intervalSec / 1000000;
-      lastReportedSpeed = lastReportedSpeed * 0.6 + instantSpeed * 0.4;
+      lastReportedSpeed = lastReportedSpeed * 0.3 + instantSpeed * 0.7;
       lastCheckBytes = totalBytes;
       lastCheckTime = now;
       const progress = Math.min(
@@ -137,7 +137,7 @@ export async function measureDownload(
       );
       onProgress("download", lastReportedSpeed, progress);
     }
-  }, 200);
+  }, 100);
 
   const onBytes = (n: number) => {
     totalBytes += n;
@@ -151,8 +151,7 @@ export async function measureDownload(
   clearTimeout(timeoutId);
   clearInterval(updateInterval);
 
-  const elapsed = (performance.now() - startTime) / 1000;
-  const finalSpeed = elapsed > 0 ? (totalBytes * 8) / elapsed / 1000000 : 0;
+  const finalSpeed = lastReportedSpeed;
   onProgress("download", Math.round(finalSpeed * 100) / 100, 100);
   return Math.round(finalSpeed * 100) / 100;
 }
@@ -177,7 +176,7 @@ export async function measureUpload(
     if (intervalSec > 0) {
       const intervalBytes = totalBytes - lastCheckBytes;
       const instantSpeed = (intervalBytes * 8) / intervalSec / 1000000;
-      lastReportedSpeed = lastReportedSpeed * 0.6 + instantSpeed * 0.4;
+      lastReportedSpeed = lastReportedSpeed * 0.3 + instantSpeed * 0.7;
       lastCheckBytes = totalBytes;
       lastCheckTime = now;
       const progress = Math.min(
@@ -186,11 +185,11 @@ export async function measureUpload(
       );
       onProgress("upload", lastReportedSpeed, progress);
     }
-  }, 200);
+  }, 100);
 
   const uploadOne = async () => {
     while (!controller.signal.aborted) {
-      const data = new Uint8Array(500000);
+      const data = new Uint8Array(50000);
       crypto.getRandomValues(data);
       try {
         await fetch(cacheBust(UPLOAD_URL), {
@@ -199,7 +198,7 @@ export async function measureUpload(
           cache: "no-store",
           signal: controller.signal,
         });
-        totalBytes += 500000;
+        totalBytes += 50000;
       } catch {
         break;
       }
@@ -210,8 +209,7 @@ export async function measureUpload(
   clearTimeout(timeoutId);
   clearInterval(updateInterval);
 
-  const elapsed = (performance.now() - startTime) / 1000;
-  const finalSpeed = elapsed > 0 ? (totalBytes * 8) / elapsed / 1000000 : 0;
+  const finalSpeed = lastReportedSpeed;
   onProgress("upload", Math.round(finalSpeed * 100) / 100, 100);
   return Math.round(finalSpeed * 100) / 100;
 }
