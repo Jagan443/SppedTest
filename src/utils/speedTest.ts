@@ -34,7 +34,7 @@ const PING_URLS = [
 const UPLOAD_URL = "https://speedtest-t26s.onrender.com/upload";
 
 const DOWNLOAD_CONNECTIONS = 8;
-const TEST_DURATION_MS = 15000;
+const TEST_DURATION_MS = 10000;
 const PING_SAMPLES = 20;
 
 // ============================================================
